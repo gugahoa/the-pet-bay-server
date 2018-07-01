@@ -1,50 +1,36 @@
-const NodeCouchDb = require('node-couchdb');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const config = require('./config');
+const morgan = require('morgan');
+const routes = require('./routes');
 
 const app = express();
 
-app.use(cors());
 app.use(bodyParser.json());
+app.use(morgan('dev'));
 app.options('*', cors());
 
-const createDatabase = (couchdb, name) => {
-    if (!name) {
-        return Promise.reject({error: "invalid_name"});
+for (let key in routes) {
+    if (routes.hasOwnProperty(key)) {
+        console.log(`Binding route ${key}`);
+        app.use(key, routes[key]);
     }
+}
 
-    return couchdb.createDatabase(name)
-        .then(() => {
-            return Promise.resolve();
-        }, err => {
-            return Promise.reject(err);
-        });
-};
-
-const findDatabase = (couchdb, name) => {
-    if (!name) {
-        return Promise.reject({error: "invalid_name"});
+/*
+  Authentication + Authorization error handling
+*/
+app.use((err, req, res, next) => {
+    if (err.name == 'pemission_denied') {
+        res.status(403).json(err.inner);
+    } else if (err.name == 'UnauthorizedError') {
+        res.status(401).json(err.inner);
+    } else {
+        console.log(err);
+        next();
     }
-
-    return couchdb.listDatabases()
-        .then(dbs => {
-            const db = dbs.find((db) => db == name);
-            if (db) {
-                return Promise.resolve(db);
-            }
-
-            return Promise.reject({error: "not_found"});
-        });
-};
-
-const couchdb = new NodeCouchDb();
-findDatabase(couchdb, config.dbname)
-    .catch(err => {
-        return createDatabase(couchdb, config.dbname);
-    });
-
+});
+/* End */
 
 app.listen(3000, () => {
     console.log("Listening at 3000");
