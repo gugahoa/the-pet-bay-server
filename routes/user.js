@@ -94,4 +94,37 @@ router.post('/', async (req, res) => {
         });
 });
 
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({error: 'malformed_body', message: 'Missing required params'});
+    }
+
+    const mangoQuery = {
+        selector: {
+            email: {$eq: email}
+        }
+    };
+
+    const user = await couchdb.mango('users', mangoQuery, {})
+          .then(({data, headers, status}) => {
+              return data.docs.pop();
+          })
+          .catch(err => {
+              console.log("User query err", err);
+              return {error: 'internal_server_error'};
+          });
+
+    if (user.error) {
+        return res.status(500).json({error: user.error});
+    }
+
+    console.log(user);
+    if (user.password == password) {
+        return res.status(200).json({token: 'banana'});
+    }
+
+    return res.status(401).json({error: 'wrong_combination', message: 'Wrong email and password combination'});
+});
+
 module.exports = router;
