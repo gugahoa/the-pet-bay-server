@@ -83,7 +83,7 @@ router.post('/', async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password } = req.query;
     if (!email || !password) {
         return res.status(400).json({error: 'malformed_body', message: 'Missing required params'});
     }
@@ -110,7 +110,7 @@ router.get('/', async (req, res) => {
     console.log(user);
     if (user.password == password) {
         const token = jwt_signer.sign({user}, 'secret');
-        return res.status(200).json({...user, token});
+        return res.status(200).json([{...user, token}]);
     }
 
     return res.status(401).json({error: 'wrong_combination', message: 'Wrong email and password combination'});
