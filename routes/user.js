@@ -2,8 +2,10 @@ const express = require('express');
 const jwt = require('express-jwt');
 const guard = require('express-jwt-permissions')();
 const router = express.Router();
+
 const { couchdb, findDatabase, createDatabase } = require('../utils/couchdb');
 const rp = require('request-promise');
+const jwt_signer = require('jsonwebtoken');
 
 createDatabase('users')
     .then(() => {
@@ -29,31 +31,17 @@ createDatabase('users')
         console.log("Unexpected error creating users database+index: ", err);
     });
 
-router.get('/:id', jwt({secret: 'secret'}), guard.check('admin'), (req, res) => {
-    const id = req.params.id;
-    couchdb.get('users', id)
-        .then(({data, headers, status}) => {
-            console.log("User data: ", data);
-        },
-        err => {
-            if (err.code == 'EDOCMISSING') {
-                return res.status(404).json(err.body);
-            }
-            console.log("Error getting user: ", err);
-            return null;
-        });
-});
-
 router.post('/', async (req, res) => {
-    const { password, name, email } = req.body;
+    const { password, name, email, image } = req.body;
     if (!password || !name || !email) {
-        res.status(400).json({error: "malformed_body", message: "Missing required params"});
+        return res.status(400).json({error: "malformed_body", message: "Missing required params"});
     }
 
     const user = {
         password,
         name,
-        email
+        email,
+        image
     };
 
     const mangoQuery = {
@@ -94,7 +82,7 @@ router.post('/', async (req, res) => {
         });
 });
 
-router.post('/login', async (req, res) => {
+router.get('/', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
         return res.status(400).json({error: 'malformed_body', message: 'Missing required params'});
@@ -121,7 +109,8 @@ router.post('/login', async (req, res) => {
 
     console.log(user);
     if (user.password == password) {
-        return res.status(200).json({token: 'banana'});
+        const token = jwt_signer.sign({user}, 'secret');
+        return res.status(200).json({...user, token});
     }
 
     return res.status(401).json({error: 'wrong_combination', message: 'Wrong email and password combination'});
