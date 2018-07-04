@@ -8,6 +8,7 @@ const app = express();
 
 app.use(bodyParser.json());
 app.use(morgan('dev'));
+app.use(cors());
 app.options('*', cors());
 
 for (let key in routes) {
@@ -32,6 +33,6 @@ app.use((err, req, res, next) => {
 });
 /* End */
 
-app.listen(3000, () => {
-    console.log("Listening at 3000");
+app.listen(4000, () => {
+    console.log("Listening at 4000");
 });
