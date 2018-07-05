@@ -96,12 +96,17 @@ router.get('/', async (req, res) => {
 
     const user = await couchdb.mango('users', mangoQuery, {})
           .then(({data, headers, status}) => {
+              console.log(data);
               return data.docs.pop();
           })
           .catch(err => {
               console.log("User query err", err);
               return {error: 'internal_server_error'};
           });
+
+    if (user == undefined) {
+        return res.status(404).json({error: 'wrong_combination', message: 'Wrong email and password combination'});
+    }
 
     if (user.error) {
         return res.status(500).json({error: user.error});
@@ -113,7 +118,7 @@ router.get('/', async (req, res) => {
         return res.status(200).json([{...user, id: user._id, token}]);
     }
 
-    return res.status(401).json({error: 'wrong_combination', message: 'Wrong email and password combination'});
+    return res.status(404).json({error: 'wrong_combination', message: 'Wrong email and password combination'});
 });
 
 router.patch('/:id', async (req, res) => {
@@ -147,6 +152,22 @@ router.patch('/:id', async (req, res) => {
         ...updatedUser
     }
     return res.status(200).json(returnUser);
+})
+
+router.delete('/:id', async (req, res) => {
+    const id = req.params.id;
+
+    const result = await couchdb.get('users', id)
+        .then(({data}) => (data))
+        .catch(() => ({error: 'internal_server_error'}));
+
+    if (result.error) {
+        return res.status(500).json(result);
+    }
+
+    return couchdb.del('users', id, user._rev)
+        .then(() => (res.status(200).json({success: true})))
+        .catch(() => (res.status(500).json({success: false})));
 })
 
 module.exports = router;
