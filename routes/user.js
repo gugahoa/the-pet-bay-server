@@ -110,10 +110,43 @@ router.get('/', async (req, res) => {
     console.log(user);
     if (user.password == password) {
         const token = jwt_signer.sign({user}, 'secret');
-        return res.status(200).json([{...user, token}]);
+        return res.status(200).json([{...user, id: user._id, token}]);
     }
 
     return res.status(401).json({error: 'wrong_combination', message: 'Wrong email and password combination'});
 });
+
+router.patch('/:id', async (req, res) => {
+    const newUser = req.body;
+    const id = req.params.id;
+
+    const user = await couchdb.get('users', id)
+          .then(({data, headers, status}) => {
+              return data;
+          })
+          .catch(err => {
+              return {error: 'internal_server_error'};
+          });
+
+    const updatedUser = await couchdb.update('users', { ...user, ...newUser })
+          .then(({data, headers, status}) => {
+              return data;
+          })
+          .catch(err => {
+              console.log("User query err", err);
+              return {error: 'internal_server_error'};
+          });
+
+    if (user.error) {
+        return res.status(500).json({error: user.error});
+    }
+
+    const returnUser = {
+        ...user,
+        ...newUser,
+        ...updatedUser
+    }
+    return res.status(200).json(returnUser);
+})
 
 module.exports = router;
