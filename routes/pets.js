@@ -1,11 +1,8 @@
 const express = require('express');
-const jwt = require('express-jwt');
-const guard = require('express-jwt-permissions')();
 const router = express.Router();
 
 const { couchdb, findDatabase, createDatabase } = require('../utils/couchdb');
 const rp = require('request-promise');
-const jwt_signer = require('jsonwebtoken');
 
 createDatabase('pets')
     .then(() => {
@@ -31,10 +28,17 @@ createDatabase('pets')
         console.log("Unexpected error creating pets database+index: ", err);
     });
 
-router.get('/', /*jwt({secret: 'secret'}),*/ async (req, res) => {
-    // if (req.user._id !== req.query.user) {
-    //     return res.status(401).json({error: 'unauthorized'});
-    // }
+router.get('/', async (req, res) => {
+    if (req.query.id) {
+        return couchdb.get('pets', req.query.id)
+            .then(({data: pet}) => {
+                return res.status(200).json([{...pet, id: pet._id}]);
+            })
+            .catch((err) => {
+                console.log("error getting pet", err);
+                return res.status(500).json({error: 'internal_server_error'});
+            });
+    }
 
     const mangoQuery = {
         selector: {
