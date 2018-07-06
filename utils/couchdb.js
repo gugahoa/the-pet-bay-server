@@ -28,24 +28,16 @@ const findDatabase = (name) => {
         }, (err) => (Promise.reject(err)));
 };
 
-const couchdb_wrapper = {};
-couchdb_wrapper.mango = (db, query, params) => {
-    return couchdb.mango(db, query, params)
-        .then((obj) => Promise.resolve(obj), (err) => Promise.reject(err));
-};
-
-couchdb_wrapper.get = (db, id) => {
-    return couchdb.get(db, id)
-        .then((obj) => Promise.resolve(obj), (err) => Promise.reject(err));
-};
-
-couchdb_wrapper.insert = (db, doc) => {
-    return couchdb.insert(db, doc)
-        .then((obj) => Promise.resolve(obj), (err) => Promise.reject(err));
+const updateDocument = async (db, newDoc) => {
+    return couchdb.get(db, newDoc.id)
+        .then(({data: oldDoc}) => {
+            return couchdb.update(db, {...oldDoc, ...newDoc});
+        });
 };
 
 module.exports = {
     couchdb,
     createDatabase,
-    findDatabase
+    findDatabase,
+    updateDocument
 };
