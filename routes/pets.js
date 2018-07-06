@@ -65,9 +65,8 @@ router.delete('/:id', async (req, res) => {
     const petId = req.params.id;
 
     const result = await couchdb.get('pets', petId)
-        .then(({data}) => (data))
-        .catch((err) => ({error: 'internal_server_error'}))
-
+          .then(({data}) => (data))
+          .catch((err) => ({error: 'internal_server_error'}));
     if (result.error) {
         return res.status(500).json(result);
     }
@@ -75,6 +74,39 @@ router.delete('/:id', async (req, res) => {
     return couchdb.del('pets', petId, result._rev)
         .then(() => (res.status(200).json({success: true})))
         .catch(() => (res.status(500).json({success: false})));
-})
+});
+
+router.patch('/:id', async (req, res) => {
+    const petId = req.params.id;
+    const result = await couchdb.get('pets', petId)
+          .then(({data}) => (data))
+          .catch((err) => {
+              console.log("Error getting pet", err);
+              return {error: 'internal_server_error'};
+          });
+
+    if (result.error) {
+        return res.status(500).json(result);
+    }
+
+    const newPet = req.body;
+
+    const updateResult = await couchdb.update('pets', { ...result, ...newPet })
+          .then(({data}) => (data))
+          .catch((err) => {
+              console.log("Error updateing pet", err);
+              return {error: 'internal_server_error'};
+          });
+
+    if (updateResult.error) {
+        return res.status(500).json(updateResult);
+    }
+
+    return res.status(200).json({
+        ...result,
+        ...newPet,
+        ...updateResult
+    });
+});
 
 module.exports = router;
