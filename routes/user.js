@@ -168,6 +168,6 @@ router.delete('/:id', async (req, res) => {
     return couchdb.del('users', id, user._rev)
         .then(() => (res.status(200).json({success: true})))
         .catch(() => (res.status(500).json({success: false})));
-})
+});
 
 module.exports = router;
