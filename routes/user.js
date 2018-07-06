@@ -150,9 +150,9 @@ router.patch('/:id', async (req, res) => {
         ...user,
         ...newUser,
         ...updatedUser
-    }
+    };
     return res.status(200).json(returnUser);
-})
+});
 
 router.delete('/:id', async (req, res) => {
     const id = req.params.id;
