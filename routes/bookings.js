@@ -31,12 +31,56 @@ createDatabase('bookings')
         console.log("Unexpected error creating bookings database+index: ", err);
     });
 
-router.get('/', /*jwt({secret: 'secret'}),*/ (req, res) => {
-    // if (req.user._id !== req.query.user) {
-    //     return res.status(401).json({error: 'unauthorized'});
-    // }
+router.get('/', async (req, res) => {
+    const mangoQuery = {
+        selector: {
+            user: {$eq: req.query.user}
+        }
+    };
 
-    return res.status(200).json([]);
+    const bookings = await couchdb.mango('bookings', mangoQuery, {})
+          .then(({data, headers, status}) => {
+              return data.docs;
+          })
+          .catch(err => {
+              console.log("User query err", err);
+              return {error: 'internal_server_error'};
+          });
+
+    return res.status(200).json(bookings.map(el => ({...el, id: el._id})));
+});
+
+router.post('/', (req, res) => {
+    const { user, pet, service, date, time } = req.body;
+    return couchdb.insert('bookings', {
+        user,
+        pet,
+        service,
+        date,
+        time
+    })
+        .then(() => (res.json({success: true})))
+        .catch(() => (res.status(500).json({success: false})));
+});
+
+router.delete('/:id', async (req, res) => {
+    const booking = await couchdb.get('bookings', req.params.id)
+          .then(({data}) => (data))
+          .catch((err) => {
+              console.log(err);
+              return { error: 'internal_server_error' };
+          });
+
+    if (booking.error) {
+        return res.status(500).json(booking);
+    }
+
+    return couchdb.del('bookings', booking._id, booking._rev)
+        .then(() => (res.status(200).json({success: true})))
+        .catch(err => {
+            console.log(err);
+            return res.status(500).json({success: false});
+        });
 });
 
 module.exports = router;

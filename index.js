@@ -6,7 +6,7 @@ const routes = require('./routes');
 
 const app = express();
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit: '50mb'}));
 app.use(morgan('dev'));
 app.use(cors());
 app.options('*', cors());
