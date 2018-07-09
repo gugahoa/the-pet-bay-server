@@ -22,10 +22,27 @@ createDatabase('promotions')
     });
 
 router.get('/', async (req, res) => {
-    return res.json({
-        dueDate: (new Date()).toLocaleDateString(),
-        products: []
+    const lastDoc = await rp({
+        method: 'GET',
+        json: true,
+        uri: 'http://localhost:5984/promotions/_changes?descending=true&limit=1'
+    })
+    .then((response) => (response.results.pop().id));
+
+    const promotions = await couchdb.get('promotions', lastDoc)
+          .then(({data}) => (data))
+          .catch((err) => ({ error: 'internal_server_error' }));
+
+    if (promotions.error) {
+        return res.status(500).json(promotions);
+    }
+
+    console.log(promotions);
+    promotions.products.map((product) => {
+        product.oldPrice = Number(product.oldPrice);
     });
+
+    return res.json(promotions);
 });
 
 module.exports = router;

@@ -21,6 +21,14 @@ createDatabase('products')
         console.log("Unexpected error creating products database+index: ", err);
     });
 
+router.get('/:id', (req, res) => {
+    return couchdb.get('products', req.params.id)
+        .then(({data}) => {
+            return res.status(200).json([{...data, id: data._id}]);
+        })
+        .catch((err) => (res.status(500).json({error: 'internal_server_error'})));
+});
+
 router.get('/', (req, res) => {
     if (req.query.id) {
         return couchdb.get('products', req.query.id)
