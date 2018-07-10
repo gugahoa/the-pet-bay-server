@@ -105,7 +105,7 @@ router.get('/', async (req, res) => {
           });
 
     if (user == undefined) {
-        return res.status(404).json({error: 'wrong_combination', message: 'Wrong email and password combination'});
+        return res.status(200).json([]);
     }
 
     if (user.error) {
@@ -118,7 +118,7 @@ router.get('/', async (req, res) => {
         return res.status(200).json([{...user, id: user._id, token}]);
     }
 
-    return res.status(404).json({error: 'wrong_combination', message: 'Wrong email and password combination'});
+    return res.status(200).json([]);
 });
 
 router.patch('/:id', async (req, res) => {
