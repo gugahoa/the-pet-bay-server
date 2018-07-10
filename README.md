@@ -11,3 +11,6 @@ You have to run couchdb before runnig the project:
 
 Now you can safely start the project:  
 `node index.js`  
+
+Before testing, run the seeds.js script to populate the database?  
+`node seeds.js`  
